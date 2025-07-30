@@ -39,6 +39,19 @@ const HAMBURGER_LINKS = [
 ];
 
 export default function ResponsiveMenu() {
+  // Show menu only if mobile (window width < 800)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 800 : false);
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < 800);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   // Dropdown visibility state
   const [dropdown, setDropdown] = useState({
     left: false,
@@ -107,6 +120,11 @@ export default function ResponsiveMenu() {
     borderRadius: 7,
     transition: "background 0.15s"
   };
+
+  // Only render on mobile (window width < 800)
+  if (!isMobile) {
+    return null;
+  }
 
   // ----- RENDER -----
   return (
