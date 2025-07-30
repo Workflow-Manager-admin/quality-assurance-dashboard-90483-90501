@@ -1,69 +1,114 @@
-import React, { useState, useRef, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+// Import NavLink only if react-router-dom is used in your app
+// import { NavLink } from "react-router-dom";
 
 /**
- * A responsive menu bar with identical dropdown styling/logic for both the left ☰ (Dashboard/Help)
- * and right ☰ (User/Account-style) menus. This ensures consistency in dropdown appearance, zIndex, etc.
+ * ResponsiveMenu component for AutoQA Pro.
+ * 
+ * Layout:
+ * - Left: ☰ button opens vertical navigation dropdown (Dashboard, Help, Settings, etc.)
+ * - Center/Left: Always shows "AutoQA Pro" title text
+ * - Right: User (avatar/email) button opens dropdown (shows user's email and Logout button)
+ * - Far right: ☰ button shows Home, Settings dropdown
+ * 
+ * All dropdowns close on outside click or ESC key. 
+ * Dropdowns are accessible, keyboard-navigable, and modern.
+ * 
+ * This file uses no external CSS frameworks—style is inline and leverages CSS variables.
  */
+
+// TODO: Replace with real user data/props
+const user = {
+  email: "test.user@email.com",
+  name: "Test User"
+};
+
+// Main navigation entries for left menu dropdown (can adjust for your app)
+const NAV_LINKS = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Test Cases", href: "/test-cases" },
+  { label: "Duplicates", href: "/duplicates" },
+  { label: "Jira Integration", href: "/jira" },
+  { label: "Help", href: "/help" },
+];
+
+// Rightmost hamburger menu links
+const HAMBURGER_LINKS = [
+  { label: "Home", href: "/" },
+  { label: "Settings", href: "/settings" }
+];
+
 export default function ResponsiveMenu() {
-  // State for showing/hiding left and right dropdowns
-  const [showLeftDropdown, setShowLeftDropdown] = useState(false);
-  const [showRightDropdown, setShowRightDropdown] = useState(false);
+  // Dropdown visibility state
+  const [dropdown, setDropdown] = useState({
+    left: false,
+    user: false,
+    right: false
+  });
 
-  // Refs for detecting clicks outside
-  const leftDropdownRef = useRef(null);
-  const rightDropdownRef = useRef(null);
+  // Refs to detect outside click/esc close for dropdowns
+  const leftRef = useRef();
+  const userRef = useRef();
+  const rightRef = useRef();
 
-  // Handle click outside for closing dropdowns
+  // Handle ALL dropdown close on outside click or Escape key
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (leftDropdownRef.current && !leftDropdownRef.current.contains(event.target)) {
-        setShowLeftDropdown(false);
-      }
-      if (rightDropdownRef.current && !rightDropdownRef.current.contains(event.target)) {
-        setShowRightDropdown(false);
+    function handleClick(e) {
+      if (
+        (!leftRef.current || !leftRef.current.contains(e.target)) &&
+        (!userRef.current || !userRef.current.contains(e.target)) &&
+        (!rightRef.current || !rightRef.current.contains(e.target))
+      ) {
+        setDropdown({ left: false, user: false, right: false });
       }
     }
-    if (showLeftDropdown || showRightDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
+    function handleEsc(e) {
+      if (e.key === "Escape") {
+        setDropdown({ left: false, user: false, right: false });
+      }
+    }
+    if (dropdown.left || dropdown.user || dropdown.right) {
+      document.addEventListener("mousedown", handleClick);
+      document.addEventListener("keydown", handleEsc);
     }
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEsc);
     };
-  }, [showLeftDropdown, showRightDropdown]);
+  }, [dropdown]);
 
-  // Shared dropdown menu style (matches both left and right sides)
-  const dropdownStyle = {
+  // Helper dropdown container style (shared)
+  const getDropdownStyle = side => ({
     position: "absolute",
-    top: "44px",
-    minWidth: "180px",
-    right: undefined,
-    left: undefined,
+    top: 44,
+    [side]: 0,
+    minWidth: side === "left" ? 200 : 150,
     background: "var(--bg-secondary, #fff)",
-    color: "var(--text-primary, #222)",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.12), 0 1.5px 6px rgba(0,0,0,0.06)",
-    borderRadius: "12px",
-    zIndex: 9999,
+    color: "var(--text-primary, #1a1a1a)",
+    boxShadow:
+      "0 8px 24px rgba(0,0,0,0.12), 0 1.5px 6px rgba(0,0,0,0.06)",
+    borderRadius: 12,
+    zIndex: 1100,
     padding: "8px 0",
-    border: "1px solid var(--border-color, #eee)",
+    border: "1px solid var(--border-color, #e9ecef)",
     display: "flex",
     flexDirection: "column",
-    gap: "4px",
+    gap: 2
+  });
+
+  // Modern icon button style
+  const iconBtnStyle = {
+    fontSize: 26,
+    background: "none",
+    border: "none",
+    color: "var(--text-primary, #1a1a1a)",
+    cursor: "pointer",
+    padding: "7px 12px",
+    borderRadius: 7,
+    transition: "background 0.15s"
   };
 
-  // Menu entries for left side (can customize per requirements)
-  const leftMenuEntries = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/help", label: "Help" }
-  ];
-
-  // Menu entries for right side (example/user profile menu)
-  const rightMenuEntries = [
-    { to: "/profile", label: "Profile" },
-    { to: "/settings", label: "Settings" },
-    { to: "/logout", label: "Logout" }
-  ];
-
+  // ----- RENDER -----
   return (
     <nav
       className="responsive-navbar"
@@ -71,102 +116,225 @@ export default function ResponsiveMenu() {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        height: "44px",
+        padding: "0 14px",
+        height: 44,
         width: "100%",
         background: "var(--bg-secondary, #fff)",
-        borderBottom: "1px solid var(--border-color, #eee)",
-        position: "relative"
+        borderBottom: "1px solid var(--border-color, #e9ecef)",
+        position: "relative",
+        zIndex: 1000
       }}
     >
+      {/* LEFT: Navigation Hamburger */}
       <div style={{ display: "flex", alignItems: "center" }}>
-        {/* Left Dropdown Button (☰) */}
-        <div ref={leftDropdownRef} style={{ position: "relative" }}>
+        {/* Hamburger Button with dropdown for nav links */}
+        <div ref={leftRef} style={{ position: "relative" }}>
           <button
-            aria-label="Open left menu"
-            style={{
-              fontSize: "22px",
-              background: "none",
-              border: "none",
-              color: "var(--text-primary, #222)",
-              cursor: "pointer",
-              padding: "8px 10px"
+            type="button"
+            aria-label="Open navigation menu"
+            aria-haspopup="true"
+            aria-expanded={dropdown.left}
+            style={iconBtnStyle}
+            onClick={e => {
+              e.stopPropagation();
+              setDropdown(d => ({
+                left: !d.left,
+                user: false,
+                right: false
+              }));
             }}
-            onClick={() => setShowLeftDropdown(v => !v)}
-          >☰</button>
-          {showLeftDropdown &&
-            <div style={{ ...dropdownStyle, left: 0, right: "auto" }}>
-              {leftMenuEntries.map((entry, idx) => (
-                <NavLink
-                  key={entry.to}
-                  to={entry.to}
-                  style={({ isActive }) => ({
+            tabIndex={0}
+          >
+            <span aria-hidden>☰</span>
+          </button>
+          {dropdown.left && (
+            <div
+              style={getDropdownStyle("left")}
+              role="menu"
+              tabIndex={-1}
+              onClick={e => e.stopPropagation()}
+            >
+              {NAV_LINKS.map(nav => (
+                <a
+                  key={nav.href}
+                  href={nav.href}
+                  tabIndex={0}
+                  style={{
                     textDecoration: "none",
                     color: "inherit",
-                    padding: "10px 16px",
+                    padding: "12px 18px",
                     fontWeight: 500,
-                    background: isActive ? "var(--bg-primary, #f5f5f5)" : "none",
-                    borderRadius: "8px",
-                    transition: "background 0.18s",
-                    display: "block"
-                  })}
-                  onClick={() => setShowLeftDropdown(false)}
+                    fontSize: 16,
+                    borderRadius: 8,
+                    display: "block",
+                    margin: "1px 4px",
+                    transition: "background 0.17s"
+                  }}
+                  onClick={() => setDropdown({ left: false, user: false, right: false })}
+                  onKeyPress={e => {
+                    if (e.key === "Enter") setDropdown({ left: false, user: false, right: false });
+                  }}
+                  role="menuitem"
                 >
-                  {entry.label}
-                </NavLink>
+                  {nav.label}
+                </a>
               ))}
             </div>
-          }
+          )}
         </div>
-        <span style={{
-          fontWeight: 700,
-          fontSize: "1.1rem",
-          marginLeft: "12px"
-        }}>QA Dashboard</span>
+        {/* App Title */}
+        <span
+          style={{
+            fontWeight: 700,
+            fontSize: "1.18rem",
+            marginLeft: 14,
+            userSelect: "none",
+            letterSpacing: "0.03em"
+          }}
+        >
+          AutoQA Pro
+        </span>
       </div>
-
-      {/* (Optional) Center header, logo, or title */}
-      <div style={{ flex: 1, textAlign: "center" }}>
-        {/* Could place logo or application name */}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center" }}>
-        {/* Right Dropdown (Hamburger) */}
-        <div ref={rightDropdownRef} style={{ position: "relative" }}>
+      {/* ----- SPACER for centralization ----- */}
+      <div style={{ flexGrow: 1 }} />
+      {/* RIGHT: User dropdown and hamburger */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {/* User (avatar/email/etc) dropdown */}
+        <div ref={userRef} style={{ position: "relative" }}>
           <button
-            aria-label="Open menu"
+            type="button"
+            aria-label="Open user menu"
             style={{
-              fontSize: "22px",
-              background: "none",
-              border: "none",
-              color: "var(--text-primary, #222)",
-              cursor: "pointer",
-              padding: "8px 10px"
+              ...iconBtnStyle,
+              padding: "6px 15px",
+              fontWeight: 600,
+              fontSize: 16,
+              display: "flex",
+              alignItems: "center",
+              gap: 7
             }}
-            onClick={() => setShowRightDropdown(v => !v)}
-          >☰</button>
-          {showRightDropdown &&
-            <div style={{ ...dropdownStyle, right: 0, left: "auto" }}>
-              {rightMenuEntries.map((entry, idx) => (
-                <NavLink
-                  key={entry.to}
-                  to={entry.to}
-                  style={({ isActive }) => ({
+            onClick={e => {
+              e.stopPropagation();
+              setDropdown(d => ({
+                left: false,
+                user: !d.user,
+                right: false
+              }));
+            }}
+          >
+            <span
+              style={{
+                width: 28,
+                height: 28,
+                background: "var(--kavia-orange, #E87A41)",
+                borderRadius: "50%",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: 15
+              }}
+            >
+              {/* Show first letter of email/name */}
+              {(user.email || user.name || "?")[0].toUpperCase()}
+            </span>
+          </button>
+          {dropdown.user && (
+            <div
+              style={getDropdownStyle("right")}
+              role="menu"
+              tabIndex={-1}
+              onClick={e => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  padding: "10px 18px 6px 18px",
+                  fontSize: 15,
+                  color: "var(--text-secondary, #5f5f5f)",
+                  wordBreak: "break-all"
+                }}
+              >
+                {user.email}
+              </div>
+              <hr style={{ margin: "8px 0", borderColor: "#ececec" }} />
+              <button
+                type="button"
+                style={{
+                  background: "var(--button-bg, #007bff)",
+                  color: "var(--button-text, #fff)",
+                  border: "none",
+                  borderRadius: 7,
+                  padding: "7px 14px",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  margin: "0 14px 7px 14px",
+                  cursor: "pointer",
+                  transition: "background 0.17s"
+                }}
+                onClick={() => {
+                  setDropdown({ left: false, user: false, right: false });
+                  // TODO: Replace with your logout function handler!
+                  window.location.href = "/logout";
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Far-right Hamburger */}
+        <div ref={rightRef} style={{ position: "relative" }}>
+          <button
+            type="button"
+            aria-label="Open options menu"
+            style={iconBtnStyle}
+            onClick={e => {
+              e.stopPropagation();
+              setDropdown(d => ({
+                left: false,
+                user: false,
+                right: !d.right
+              }));
+            }}
+            tabIndex={0}
+          >
+            <span aria-hidden>☰</span>
+          </button>
+          {dropdown.right && (
+            <div
+              style={getDropdownStyle("right")}
+              role="menu"
+              tabIndex={-1}
+              onClick={e => e.stopPropagation()}
+            >
+              {HAMBURGER_LINKS.map(link => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  tabIndex={0}
+                  style={{
                     textDecoration: "none",
                     color: "inherit",
-                    padding: "10px 16px",
+                    padding: "12px 18px",
                     fontWeight: 500,
-                    background: isActive ? "var(--bg-primary, #f5f5f5)" : "none",
-                    borderRadius: "8px",
-                    transition: "background 0.18s",
-                    display: "block"
-                  })}
-                  onClick={() => setShowRightDropdown(false)}
+                    fontSize: 15,
+                    borderRadius: 8,
+                    display: "block",
+                    margin: "1px 4px",
+                    transition: "background 0.15s"
+                  }}
+                  onClick={() => setDropdown({ left: false, user: false, right: false })}
+                  onKeyPress={e => {
+                    if (e.key === "Enter") setDropdown({ left: false, user: false, right: false });
+                  }}
+                  role="menuitem"
                 >
-                  {entry.label}
-                </NavLink>
+                  {link.label}
+                </a>
               ))}
             </div>
-          }
+          )}
         </div>
       </div>
     </nav>
